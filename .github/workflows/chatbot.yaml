@@ -1,0 +1,38 @@
+name: Deploy Chatbot API - DEV
+
+on:
+  push:
+    branches:
+      - chatbot-api  # Runs only when this branch is updated
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  deploy:
+    name: Deploy Chatbot API
+    runs-on: self-hosted  # Runs on AWS instance
+
+    steps:
+      - name: Checkout Code from `chatbot-api`
+        uses: actions/checkout@v2
+        with:
+          ref: chatbot-api
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Create and Activate Virtual Environment
+        run: |
+          cd /home/ec2-user/karneyium-app-chatbot
+          if [ ! -d "venv" ]; then
+            python3 -m venv venv
+          fi
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Start Uvicorn Server
+        run: |
+          cd /home/ec2-user/karneyium-app-chatbot
+          source venv/bin/activate
+          nohup uvicorn api_chat_infusion:app --host 0.0.0.0 --port 8000 > chatbot-api.log 2>&1 &
